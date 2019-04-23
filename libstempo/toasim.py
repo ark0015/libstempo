@@ -287,7 +287,7 @@ def add_jitter(psr, ecorr ,flagid=None, flags=None, coarsegrain=0.1,
     psr.stoas[:] += (1 / day) * N.dot(U*ecorrvec, N.random.randn(U.shape[1]))
 
 
-def add_rednoise(psr,A,gamma,components=10,seed=None):
+def add_rednoise(psr,A,gamma,components=10,seed=None,logspacing=False):
     """Add red noise with P(f) = A^2 / (12 pi^2) (f year)^-gamma,
     using `components` Fourier bases.
     Optionally take a pseudorandom-number-generator seed."""
@@ -295,20 +295,21 @@ def add_rednoise(psr,A,gamma,components=10,seed=None):
     if seed is not None:
         N.random.seed(seed)
     
-    t = psr.toas()
-    minx, maxx = N.min(t), N.max(t)
-    x = (t - minx) / (maxx - minx)
-    T = (day/year) * (maxx - minx)
+    if not logspacing:
+	    t = psr.toas()
+	    minx, maxx = N.min(t), N.max(t)
+	    x = (t - minx) / (maxx - minx)
+	    T = (day/year) * (maxx - minx)
 
-    size = 2*components
-    F = N.zeros((psr.nobs,size),'d')
-    f = N.zeros(size,'d')
+	    size = 2*components
+	    F = N.zeros((psr.nobs,size),'d')
+	    f = N.zeros(size,'d')
 
-    for i in range(components):
-        F[:,2*i]   = N.cos(2*math.pi*(i+1)*x)
-        F[:,2*i+1] = N.sin(2*math.pi*(i+1)*x)
+	    for i in range(components):
+	        F[:,2*i]   = N.cos(2*math.pi*(i+1)*x)
+	        F[:,2*i+1] = N.sin(2*math.pi*(i+1)*x)
 
-        f[2*i] = f[2*i+1] = (i+1) / T
+	        f[2*i] = f[2*i+1] = (i+1) / T
 
     norm = A**2 * year**2 / (12 * math.pi**2 * T)
     prior = norm * f**(-gamma)
